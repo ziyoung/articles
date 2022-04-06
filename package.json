@@ -1,0 +1,14 @@
+{
+  "name": "articles",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/ziyoung/articles.git",
+  "author": "zhiyang <dengzhiyang123@126.com>",
+  "license": "MIT",
+  "scripts": {
+    "prettier": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^2.6.2"
+  }
+}
