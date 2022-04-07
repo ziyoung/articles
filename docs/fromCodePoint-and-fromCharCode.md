@@ -42,9 +42,9 @@ Buffer.from("😝", "utf8"); // [0xf0, 0x9f, 0x98, 0x9d]
 Buffer.from("😝", "utf16le"); // [0x3d, 0xd8, 0x1d, 0xde]
 ```
 
-### JavaScript 字符的缺陷
+## JavaScript 字符的缺陷
 
-JavaScript 虽然遵循 Unicode 编码，但采用的是已经废弃的 UCS-2 编码格式。该方案的缺陷是对于占用 4 个**字节**的字符，比如 emoji 表情，会被当做 2 个**字符**。调用字符串的 `charCodeAt` 方法可以看到字符指定位置的单元序列。
+JavaScript 虽然遵循 Unicode 编码，但采用的是已经废弃的 UCS-2 编码格式。该方案的缺陷是对于 4 个**字节**的字符，比如 emoji 表情，会拆分 2 个**字符**来表示。字符的长度与 `charCodeAt` 方法即可看出这一点。
 
 ```js
 "😝".length; // 2
@@ -55,9 +55,15 @@ JavaScript 虽然遵循 Unicode 编码，但采用的是已经废弃的 UCS-2 �
 "😝".charCodeAt(1); // 56861 === 0xDE1D
 ```
 
-将单元序列转成 16 进制数，加上 `\u` 也可用以表示该字符。所以我们看到上方对 「😝」拆分即得到 2 个字符。使用 `String.fromCharCode` 可以将单元序列转成字符。`fromCharCode` 与 `charCodeAt` 可以归为一组。
+将单元序列转成 16 进制数，加上 `\u` 也可用以表示该字符。使用 `String.fromCharCode` 可以将单元序列转成字符。`fromCharCode` 与 `charCodeAt` 可以归为一组。
 
-在日常的开发中，我们不应该纠结于这些细节中，好在 ES6 的一些新特性帮助我们更方便地的处理字符串。说使用 `for...of` 来遍历字符串，使用 `Array.from` 来准确的计算字符串长度。
+```js
+String.fromCharCode(55357, 56861); // '😝'
+```
+
+## ES6 的改进
+
+字符串的操作，日常开发中是如此常见。我们想用更好的方式来处理字符串。好在 ES6 改进了字符串的操作。使用 `for...of` 来遍历字符串，使用 `Array.from` 来准确的计算字符串长度。
 
 ```js
 for (const ch of "😝") {
@@ -67,10 +73,32 @@ for (const ch of "😝") {
 Array.from("😝").length;
 ```
 
-## ES6 中对 Unicode 的支持
+对于 4 字节的字符，也支持了 Unicode 码表示。「😝」的这几种写法是等效。
 
 ```js
-// '😝'
-// '\uD83D\uDE1D'
-// '\u{1F61D}'
+"😝" === "\uD83D\uDE1D";
+"😝" === "\u{1F61D}";
+```
+
+## Buffer 的拼接
+
+了解这些知识后，理解 Buffer 的拼接就需要注意了。
+
+```js
+const buf = Buffer.from("😝"); // 4 字节
+
+buf.slice(0, 2).toString() + buf.slice(2).toString(); // '���'
+```
+
+结果跟预期完全不一致。在调用 toString 时，字符并不完成，被转化成 [**� (Unicode replacement character)**](https://www.fileformat.info/info/unicode/char/fffd/index.htm)。要么用 `Buffer.concat` 或者 `StringDecoder` 来去实现拼接。
+
+```js
+// 1
+Buffer.concat([buf.slice(0, 2), buf.slice(2)], 4).toString();
+
+// 2
+const { StringDecoder } = require("string_decoder");
+const decoder = new StringDecoder("utf8");
+decoder.write(buf.slice(0, 2));
+decoder.end(buf.slice(2)); // '😝'
 ```
