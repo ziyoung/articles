@@ -2,12 +2,12 @@
 
 `String.fromCodePoint` 与 `String.fromCharCode` 这两个方法名称相似。如果你之前未使用过，让我们来先看 MDN 上的介绍。
 
-- [String.fromCodePoint](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/fromCodePoint)
-
+> [String.fromCodePoint](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/fromCodePoint)
+>
 > String.fromCodePoint() 静态方法返回使用指定的代码点序列创建的字符串。
 
-- [String.fromCodePoint](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/fromCharCode)
-
+> [String.fromCodePoint](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/fromCharCode)
+>
 > 静态 String.fromCharCode() 方法返回由指定的 UTF-16 代码单元序列创建的字符串。
 
 读完以上介绍，你的困惑可能又多了一些。「代码点」，「UTF-16 代码单元序列」分别指的是什么意思？为了更好地理解这些概念，让我们从 Unicode 编码谈起。
@@ -44,7 +44,7 @@ Buffer.from("😝", "utf16le"); // [0x3d, 0xd8, 0x1d, 0xde]
 
 ## JavaScript 字符的缺陷
 
-JavaScript 虽然遵循 Unicode 编码，但采用的是已经废弃的 UCS-2 编码格式。该方案的缺陷是对于 4 个**字节**的字符，比如 emoji 表情，会拆分 2 个**字符**来表示，两个 UTF-16 字符。字符的长度与 `charCodeAt` 方法即可看出这一点。
+JavaScript 虽然遵循 Unicode 编码，但采用的是废弃的 UCS-2 编码格式。该方案的缺陷是对于 4 个**字节**的字符，比如 emoji 表情，会拆分 2 个**字符**，即 2 个 UTF-16 字符。获取字符的长度与调用 `charCodeAt` 方法可看出这一点。
 
 ```js
 "😝".length; // 2
@@ -61,7 +61,7 @@ JavaScript 虽然遵循 Unicode 编码，但采用的是已经废弃的 UCS-2 �
 String.fromCharCode(55357, 56861); // '😝'
 ```
 
-对于常用的字符来说，`charCodeAt` 与 `codePointAt` 的结果一致。
+经过上面的介绍，我们发现对于由一个 UTF-16 代码单元构成的字符，`charCodeAt` 与 `codePointAt` 的结果一致。
 
 ## ES6 的改进
 
@@ -84,7 +84,7 @@ Array.from("😝").length;
 
 ## Buffer 与字符串的转换
 
-前文中提到，字符在存储占据的空间是不一样的，在 Buffer 与字符串转换时，需要注意，避免隐式地调用 `toString`。
+前文中提到，字符在存储占据的空间是不一样的。在 Buffer 拼接时，尤其要注意避免隐式地调用 `toString`。
 
 ```js
 const buf = Buffer.from("😝"); // 4 字节
@@ -92,7 +92,7 @@ const buf = Buffer.from("😝"); // 4 字节
 buf.slice(0, 2) + buf.slice(2); // '���'
 ```
 
-上述代码片段的结果跟预期完全不一致。在调用 `toString` 时，Buffer 并不完整，错误地被转化成 [**� (Unicode replacement character)**](https://www.fileformat.info/info/unicode/char/fffd/index.htm)。正确的方式使用用 `Buffer.concat` 或者 `StringDecoder` 来去实现拼接。
+上述代码片段的结果跟预期完全不一致。在调用 `toString` 时，Buffer 并不完整，错误地被转化成 [**� (Unicode replacement character)**](https://www.fileformat.info/info/unicode/char/fffd/index.htm)。正确的方式使用 `Buffer.concat` 或者 `StringDecoder` 来去实现拼接。
 
 ```js
 // 1
@@ -114,3 +114,8 @@ decoder.end(buf.slice(2)); // '😝'
 - 尽量使用 ES6 的新方法来处理字符串。
 
 - Buffer 与字符串转化时，需要注意，保证 Buffer 的完成性。
+
+## 参考资料
+
+- [字符串的扩展](https://es6.ruanyifeng.com/#docs/string)
+- [Node 中的 Buffer 对象](https://nodejs.org/dist/latest-v14.x/docs/api/buffer.html#buffer_buffers_and_character_encodings)
